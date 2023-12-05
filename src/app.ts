@@ -2,7 +2,7 @@ import express from "express";
 import multer from "multer";
 import { parse } from "papaparse";
 import { sendError, renderTable, renderForm } from "./utils";
-import { Persons } from "./types";
+import {GoogleSheetsAction, Persons} from "./types";
 import type { Person, Result } from "./types";
 
 export const app = express();
@@ -88,4 +88,23 @@ app.post(logJsonPath, (req, res) => {
   console.log(`POST ${logJsonPath} ${JSON.stringify(body, undefined, 2)}`);
 
   res.status(204).send();
+});
+
+// Question 2.
+app.post("/google-sheets-action", async (req, res) => {
+  let body = req.body;
+
+  if (!req.is("application/json")) {
+    body = JSON.parse(req.body);
+  }
+
+  const result = GoogleSheetsAction.safeParse(body);
+  if (!result.success) {
+    // TODO: more granular errors
+    return res.status(400).json({ error: 'bad request' });
+  }
+
+  // TODO: interact with Google API to create and add content the spreadsheet
+
+  return res.status(200).json({ ID: -1 })
 });

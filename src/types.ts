@@ -1,5 +1,14 @@
 import z from "zod";
 
+export const GoogleSheetsAction = z.object({
+  Spreadsheet: z.string(),
+  Sheet: z.string(),
+  Name: z.string(),
+  Response: z.string(),
+});
+
+export type GoogleSheetsAction = z.infer<typeof GoogleSheetsAction>;
+
 export const Person = z.object({
   Name: z.string(),
   Number: z.string().regex(/^04\d{8}$/),

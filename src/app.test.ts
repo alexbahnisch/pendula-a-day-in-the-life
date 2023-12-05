@@ -122,3 +122,28 @@ describe("POST /csv", () => {
     expect(response.body).toEqual({ error: "empty .csv data" });
   });
 });
+
+describe("POST /google-sheets-action", () => {
+  test("success", async () => {
+    const response = await request(app)
+        .post("/google-sheets-action")
+        .send({
+          Spreadsheet: "Customer Campaign",
+          Sheet: "Responses",
+          Name: "Lucas",
+          Response: "Final Fantasy VII"
+        })
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ ID: -1 });
+  });
+
+  test("bad request", async () => {
+    const response = await request(app)
+        .post("/google-sheets-action")
+        .send({})
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: 'bad request' });
+  });
+})
