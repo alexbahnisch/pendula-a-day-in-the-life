@@ -1,4 +1,5 @@
 # root:
+/.coverage
 /.idea
 /node_modules
 

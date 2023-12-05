@@ -1,10 +1,16 @@
-import type {Result} from "./types.ts";
+import type {Result} from "./types";
+import type {Request, Response} from "express";
 
-export function error(message: string): string {
-    return `<div style="color: red;">${message}</div>`
+export function renderForm(): string {
+    return `
+<form action="/csv" method="post" enctype="multipart/form-data">
+  <input type="file" name="csv-file" accept=".csv">
+  <button type="submit">Upload CSV</button>
+</form>
+`
 }
 
-export function table(results: Result[]): string {
+export function renderTable(results: Result[]): string {
     return `
 <table>
   <thead>
@@ -25,4 +31,11 @@ export function table(results: Result[]): string {
   </tbody>
 </table>    
 `
+}
+
+export function sendError(req: Request, res: Response, status: number, message: string) {
+    res.status(status)
+    return req.accepts('text/html')
+        ? res.type('text/html').send(`<div style="color: maroon;">${message}</div>`)
+        : res.json({error: message})
 }
