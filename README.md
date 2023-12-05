@@ -36,9 +36,9 @@ or, to run server in watch mode:
 npm run watch
 ```
 
-The server will then be available at http://localhost:7000, or whatever port is specified by the `PORT` environment
-variable. Example .csv files for upload are available in the `./data` directory. On a successful request expect the
-name and numbers of the triggered persons to be printed to the stdout.
+The server will then be available at http://localhost:7000, or whatever port is specified by the `PORT`
+environment variable. Example .csv files for upload are available in the `./data` directory. On a 
+successful csv upload the json blob of the triggered persons will be printed to stdout.
 
 To run tests:
 
