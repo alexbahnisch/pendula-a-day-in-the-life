@@ -1,0 +1,6 @@
+# root:
+/.idea
+/node_modules
+
+# wildcards:
+*tmp*
