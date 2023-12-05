@@ -1,8 +1,8 @@
-import {http, HttpResponse} from "msw";
-import {NEXT_ACTION_PATH} from "./app";
+import { http, HttpResponse } from "msw";
+import { EXTERNAL_ENDPOINT } from "./app";
 
-export const logJsonPostHandler = http.post(NEXT_ACTION_PATH, () => {
-    return new HttpResponse(null, {
-        status: 204,
-    })
-})
+export const logJsonPostHandler = http.post(EXTERNAL_ENDPOINT, () => {
+  return new HttpResponse(null, {
+    status: 204,
+  });
+});

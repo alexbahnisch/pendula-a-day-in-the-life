@@ -1,123 +1,124 @@
-import {join} from 'path';
-import request from 'supertest';
-import {app, NEXT_ACTION_PATH} from './app';
-import {parse} from "papaparse";
-import {readFileSync} from "fs";
-import {Persons} from "./types";
-import type {Result} from "./types";
+import { join } from "path";
+import request from "supertest";
+import { app, EXTERNAL_ENDPOINT } from "./app";
+import { parse } from "papaparse";
+import { readFileSync } from "fs";
+import { Persons } from "./types";
+import type { Result } from "./types";
 import {
-    mockClientServerError,
-    mockClientServerErrorOnce,
-    mockNetworkError,
-    mockNetworkErrorOnce,
-    server
+  mockClientServerError,
+  mockClientServerErrorOnce,
+  mockNetworkError,
+  mockNetworkErrorOnce,
+  server,
 } from "../jest.setup";
 
-const parseResult = parse(readFileSync(join(__dirname, '..', '/data/trigger.csv')).toString('utf-8'), { header: true, skipEmptyLines: true })
-const persons = Persons.parse(parseResult.data)
-const resultAllSuccess = persons.map((person): Result => ({ ...person, Success: true }))
-const resultFirstFailure = persons.map((person, index): Result => ({ ...person, Success: index > 0 }))
-const resultAllFailure = persons.map((person): Result => ({ ...person, Success: false }))
+const parseResult = parse(readFileSync(join(__dirname, "..", "/data/trigger_success.csv")).toString("utf-8"), {
+  header: true,
+  skipEmptyLines: true,
+});
+const persons = Persons.parse(parseResult.data);
+const resultAllSuccess = persons.map((person): Result => ({ ...person, Accepted: true }));
+const resultPartialFailure = persons.map((person, index): Result => ({ ...person, Accepted: index > 0 }));
+const resultAllFailure = persons.map((person): Result => ({ ...person, Accepted: false }));
 
-describe('POST /csv', () => {
-    it('accepted all successful', async () => {
-        const response = await request(app)
-            .post('/csv')
-            .set('accept', 'application/json')
-            .set('content-type', 'multipart/form-data')
-            .attach('csv-file', join(__dirname, '..', '/data/trigger.csv'))
+describe("POST /csv", () => {
+  test("success, all accepted", async () => {
+    const response = await request(app)
+      .post("/csv")
+      .set("accept", "application/json")
+      .set("content-type", "multipart/form-data")
+      .attach("csv-file", join(__dirname, "..", "/data/trigger_success.csv"));
 
-        expect(response.status).toBe(202);
-        expect(response.body).toEqual({ results: resultAllSuccess });
-    });
+    expect(response.status).toBe(202);
+    expect(response.body).toEqual({ results: resultAllSuccess });
+  });
 
-    it('accepted first failed due to bad request', async () => {
-        mockClientServerErrorOnce(server, NEXT_ACTION_PATH, 'post', 400)
-        const response = await request(app)
-            .post('/csv')
-            .set('accept', 'application/json')
-            .set('content-type', 'multipart/form-data')
-            .attach('csv-file', join(__dirname, '..', '/data/trigger.csv'))
+  test("success, partial accepted due to bad request", async () => {
+    mockClientServerErrorOnce(server, EXTERNAL_ENDPOINT, "post", 400);
+    const response = await request(app)
+      .post("/csv")
+      .set("accept", "application/json")
+      .set("content-type", "multipart/form-data")
+      .attach("csv-file", join(__dirname, "..", "/data/trigger_success.csv"));
 
-        expect(response.status).toBe(202);
-        expect(response.body).toEqual({ results: resultFirstFailure });
-    });
+    expect(response.status).toBe(202);
+    expect(response.body).toEqual({ results: resultPartialFailure });
+  });
 
-    it('accepted all failed due to bad request', async () => {
-        mockClientServerError(server, NEXT_ACTION_PATH, 'post', 400)
-        const response = await request(app)
-            .post('/csv')
-            .set('accept', 'application/json')
-            .set('content-type', 'multipart/form-data')
-            .attach('csv-file', join(__dirname, '..', '/data/trigger.csv'))
+  test("success, none accepted due to bad requests", async () => {
+    mockClientServerError(server, EXTERNAL_ENDPOINT, "post", 400);
+    const response = await request(app)
+      .post("/csv")
+      .set("accept", "application/json")
+      .set("content-type", "multipart/form-data")
+      .attach("csv-file", join(__dirname, "..", "/data/trigger_success.csv"));
 
-        expect(response.status).toBe(202);
-        expect(response.body).toEqual({ results: resultAllFailure });
-    });
+    expect(response.status).toBe(202);
+    expect(response.body).toEqual({ results: resultAllFailure });
+  });
 
-    it('accepted first failed due to network error', async () => {
-        mockNetworkErrorOnce(server, NEXT_ACTION_PATH, 'post')
-        const response = await request(app)
-            .post('/csv')
-            .set('accept', 'application/json')
-            .set('content-type', 'multipart/form-data')
-            .attach('csv-file', join(__dirname, '..', '/data/trigger.csv'))
+  test("success, partial accepted due to network error", async () => {
+    mockNetworkErrorOnce(server, EXTERNAL_ENDPOINT, "post");
+    const response = await request(app)
+      .post("/csv")
+      .set("accept", "application/json")
+      .set("content-type", "multipart/form-data")
+      .attach("csv-file", join(__dirname, "..", "/data/trigger_success.csv"));
 
-        expect(response.status).toBe(202);
-        expect(response.body).toEqual({ results: resultFirstFailure });
-    });
+    expect(response.status).toBe(202);
+    expect(response.body).toEqual({ results: resultPartialFailure });
+  });
 
-    it('accepted all failed due to network error', async () => {
-        mockNetworkError(server, NEXT_ACTION_PATH, 'post')
-        const response = await request(app)
-            .post('/csv')
-            .set('accept', 'application/json')
-            .set('content-type', 'multipart/form-data')
-            .attach('csv-file', join(__dirname, '..', '/data/trigger.csv'))
+  test("success, none accepted due to network errors", async () => {
+    mockNetworkError(server, EXTERNAL_ENDPOINT, "post");
+    const response = await request(app)
+      .post("/csv")
+      .set("accept", "application/json")
+      .set("content-type", "multipart/form-data")
+      .attach("csv-file", join(__dirname, "..", "/data/trigger_success.csv"));
 
-        expect(response.status).toBe(202);
-        expect(response.body).toEqual({ results: resultAllFailure });
-    });
+    expect(response.status).toBe(202);
+    expect(response.body).toEqual({ results: resultAllFailure });
+  });
 
-    it('missing .csv file', async () => {
-        const response = await request(app)
-            .post('/csv')
-            .set('accept', 'application/json')
+  test("missing .csv file", async () => {
+    const response = await request(app).post("/csv").set("accept", "application/json");
 
-        expect(response.status).toBe(400);
-        expect(response.body).toEqual({error: 'missing .csv file'});
-    });
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: "missing .csv file" });
+  });
 
-    it('malformed .csv file', async () => {
-        const response = await request(app)
-            .post('/csv')
-            .set('accept', 'application/json')
-            .set('content-type', 'multipart/form-data')
-            .attach('csv-file', join(__dirname, '..', '/data/trigger_csv_error.csv'))
+  test("malformed .csv file", async () => {
+    const response = await request(app)
+      .post("/csv")
+      .set("accept", "application/json")
+      .set("content-type", "multipart/form-data")
+      .attach("csv-file", join(__dirname, "..", "/data/trigger_csv_error.csv"));
 
-        expect(response.status).toBe(400);
-        expect(response.body).toEqual({error: 'malformed .csv file'});
-    });
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: "malformed .csv file" });
+  });
 
-    it('malformed .csv data', async () => {
-        const response = await request(app)
-            .post('/csv')
-            .set('accept', 'application/json')
-            .set('content-type', 'multipart/form-data')
-            .attach('csv-file', join(__dirname, '..', '/data/trigger_data_error.csv'))
+  test("malformed .csv data", async () => {
+    const response = await request(app)
+      .post("/csv")
+      .set("accept", "application/json")
+      .set("content-type", "multipart/form-data")
+      .attach("csv-file", join(__dirname, "..", "/data/trigger_data_error.csv"));
 
-        expect(response.status).toBe(400);
-        expect(response.body).toEqual({error: 'malformed .csv data'});
-    });
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: "malformed .csv data" });
+  });
 
-    it('empty .csv data', async () => {
-        const response = await request(app)
-            .post('/csv')
-            .set('accept', 'application/json')
-            .set('content-type', 'multipart/form-data')
-            .attach('csv-file', join(__dirname, '..', '/data/trigger_empty.csv'))
+  test("empty .csv data", async () => {
+    const response = await request(app)
+      .post("/csv")
+      .set("accept", "application/json")
+      .set("content-type", "multipart/form-data")
+      .attach("csv-file", join(__dirname, "..", "/data/trigger_empty_error.csv"));
 
-        expect(response.status).toBe(400);
-        expect(response.body).toEqual({error: 'empty .csv data'});
-    });
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: "empty .csv data" });
+  });
 });
